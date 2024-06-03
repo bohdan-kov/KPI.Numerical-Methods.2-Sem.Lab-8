@@ -22,46 +22,57 @@ namespace Lab_8
             Console.WriteLine(string.Concat(Enumerable.Repeat("-", 75)));
         }
 
-        /// <summary>
-        /// Метод Рунге-Кутта за формулою (2)
-        /// </summary>
-        /// <returns></returns>
-        static (double, double) RungeKuttaStep(double x, double y, double h)
-        {
-            double k1 = h * calc_fun(x, y);
-            double k2 = h * calc_fun(x + h / 2, y + k1 / 2);
-            double k3 = h * calc_fun(x + h / 2, y + k2 / 2);
-            double k4 = h * calc_fun(x + h, y + k3);
-            double del_y = (k1 + 2 * k2 + 2 * k3 + k4) / 6.0;
-            return (y + del_y, del_y);
-        }
-
         static void RungeKuttMethod(double a, double b, double x0, double y0)
         {
-            double h = 0.1; // Початковий крок, взятий з умови
-            int M = 10; // Початкова кількість ітерацій 
+            double h = 0.1; //Задамо початковий крок 0.1
+            int M = 10;
 
-            Console.WriteLine("Номер iтерацiї\tx\ty\t\t\tпомилка");
+            double k1 = 0;
+            double k2 = 0;
+            double k3 = 0;
+            double k4 = 0;
+
+            double k1_r = 0;
+            double k2_r = 0;
+            double k3_r = 0;
+            double k4_r = 0;
+
+            double del_y = 0;
+            double del_y_r = 0;
+
+            Console.WriteLine("Номер iтерацiї\tx\ty\t\t\tdelta_y");
 
             for (int i = 0; i < M; i++)
             {
-                // Один крок з кроком h
-                (double y_h, double del_y_h) = RungeKuttaStep(x0, y0, h);
+                k1 = h * calc_fun(x0, y0);
+                k1_r = (h / 2) * calc_fun(x0, y0);
 
-                // Два кроки з кроком h/2
-                (double y_half1, double _) = RungeKuttaStep(x0, y0, h / 2); // Додатково для обрахунку похибки за правилом Рунге
+                k2 = h * calc_fun(x0 + (h / 2), y0 + k1 / 2);
+                k2_r = (h / 2) * calc_fun(x0 + (h / 4), y0 + k1 / 2);
 
-                (double y_h2, double del_y_h2) = RungeKuttaStep(x0 + h / 2, y_half1, h / 2);
 
-                // Оцінка похибки за правилом рунте. Формула (8)
-                double error = Math.Abs((y_h2 - y_h) / 15.0);
+                k3 = h * calc_fun(x0 + (h / 2), y0 + k2 / 2);
+                k3_r = (h / 2) * calc_fun(x0 + (h / 4), y0 + k2 / 2);
 
-                y0 = y_h;
+                k4 = h * calc_fun(x0 + h, y0 + k3);
+                k4_r = (h / 2) * calc_fun(x0 + (h / 2), y0 + k3);
+
+
+                if (Math.Abs((k2 - k3) / (k1 / k2)) > Math.Pow(10, -2))
+                {
+                    h /= 2;
+                    M *= 2;
+                }
+
+                del_y = (k1 + (2 * k2) + (2 * k3) + k4) * (1.0 / 6.0);
+                del_y_r = (k1_r + (2 * k2_r) + (2 * k3_r) + k4_r) * (1.0 / 6.0);
+
+                y0 += del_y;
                 x0 += h;
-
-                Console.WriteLine($"{i + 1}\t\t{Math.Round(x0, 5)}\t{y0}\t{error}");
+                Console.WriteLine($"{i + 1}\t\t{Math.Round(x0, 5)}\t{y0}\t{del_y}\t{(del_y - del_y_r) / 15}");
                 PrintSep();
             }
+
         }
 
         static void AdamsMethod(double x0, double y0)
@@ -72,8 +83,9 @@ namespace Lab_8
             // Початковий список, перші взяті перші 3 знач. із минулого метода
             List<double> y = new List<double> { 0, 0.09907029408912865, 0.19290313803369596, 0.2774320639668538 };
             List<double> x = new List<double> { 0, 0.1, 0.2, 0.3 };
+            List<double> error = new List<double> {0, 0, 0, 0};
 
-            double y_predicted, y_adjusted, y_predicted_half, y_adjusted_half, error;
+            double y_predicted, y_adjusted, y_predicted_half, y_adjusted_half;
 
             Console.WriteLine("Номер iтерацiї\tx\ty\t\t\tпомилка");
 
@@ -93,7 +105,7 @@ namespace Lab_8
                 y_adjusted_half = y[k] + (h_half / 24) * (9 * y_predicted_half + 19 * calc_fun(x[k], y[k]) - 5 * calc_fun(x[k - 1], y[k - 1]) + calc_fun(x[k - 2], y[k - 2]));
 
                 // Оцінка похибки методом Рунте за правилом Рунге (8)
-                error = Math.Abs((y_adjusted_half - y_adjusted) / 15.0);
+                error.Add(Math.Abs((y_predicted - y_predicted_half) / 15.0));
 
                 if (Math.Abs(y_adjusted - y_predicted) <= Math.Pow(10, -4))
                 {
@@ -108,7 +120,7 @@ namespace Lab_8
 
             for (int i = 0; i < k; i++)
             {
-                Console.WriteLine($"{i}\t\t{Math.Round(x[i], 5)}\t{y[i]}\t{error * Math.Pow(10, -4)}");
+                Console.WriteLine($"{i}\t\t{Math.Round(x[i], 5)}\t{y[i]}\t{error[i]}");
                 PrintSep();
             }
         }
